@@ -53,6 +53,47 @@ class Customer {
     return new Customer(customer);
   }
 
+  /** get all customers who match search input */
+
+  static async searchResults(searchInput) {
+    const results = await db.query(
+      `SELECT id,
+         first_name AS "firstName",
+         last_name AS "lastName",
+         phone,
+         notes
+        FROM customers 
+        WHERE LOWER(first_name) LIKE '%${searchInput}%' 
+          OR LOWER(last_name) LIKE '%${searchInput}%'
+        ORDER BY last_name, first_name;
+      `
+    );
+    return results.rows.map(c => new Customer(c));
+  }
+
+  /** get top 10 customers  */
+
+  static async topTen() {
+    const results = await db.query(
+      `SELECT 
+         customers.id,
+         first_name AS "firstName", 
+         last_name AS "lastName", 
+         phone, 
+         customers.notes,
+         COUNT(*)
+        FROM customers 
+          JOIN reservations 
+          ON reservations.customer_id = customers.id 
+        GROUP BY customers.id
+        ORDER BY COUNT(*) DESC 
+        LIMIT 10;
+      `
+    );
+    return results.rows.map(c => new Customer(c));
+  }
+
+
   /** get all reservations for this customer. */
 
   async getReservations() {
@@ -78,6 +119,17 @@ class Customer {
       );
     }
   }
+
+  /** full name */
+
+  fullName() {
+    return `${this.firstName} ${this.lastName}`;
+  }
+
+
 }
+
+
+
 
 module.exports = Customer;

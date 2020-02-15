@@ -20,13 +20,12 @@ router.get("/", async function (req, res, next) {
 
 /** Page to search for a customer */
 
-router.post("/search/", async function (req, res, next) {
-  const searchInput = req.body.search;
+router.get("/search/", async function (req, res, next) {
+  const searchInput = req.query.search
 
   try {
     const customers = await Customer.searchResults(searchInput);
 
-    console.log("CUSTOMERS IS .....", customers);
     return res.render("customer_list.html", { customers });
   } catch (err) {
     return next(err);
@@ -126,8 +125,8 @@ router.post("/:id/add-reservation/", async function (req, res, next) {
 
     const reservation = new Reservation({
       customerId,
-      startAt,
       numGuests,
+      startAt,
       notes
     });
     await reservation.save();
@@ -137,5 +136,32 @@ router.post("/:id/add-reservation/", async function (req, res, next) {
     return next(err);
   }
 });
+
+router.get("/reservation/:id/edit/", async function (req, res, next) {
+  try {
+    const reservation = await Reservation.get(req.params.id);
+
+    res.render("reservation_edit_form.html", { reservation });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+/** Handle editing a customer. */
+
+router.post("/reservation/:id/edit/", async function (req, res, next) {
+  try {
+    const reservation = await Reservation.get(req.params.id);
+    reservation.startAt = req.body.startAt;
+    reservation.numGuests = req.body.numGuests;
+    reservation.notes = req.body.notes;
+    await reservation.save();
+
+    return res.redirect(`/${reservation._customerId}/`);
+  } catch (err) {
+    return next(err);
+  }
+});
+
 
 module.exports = router;
